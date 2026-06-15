@@ -13,18 +13,18 @@ export default function DashboardPage() {
   useEffect(() => {
     Promise.all([getOverview(), getActiveTrips(), getAlerts(), getGrowthMetrics()])
       .then(([ov, at, al, gr]) => {
-        setOverview(ov.data.overview);
-        setActiveTripsCount(at.data.activeTrips);
-        setAlerts(al.data.alerts);
-        setGrowth(gr.data);
+        setOverview(ov.data?.overview || null);
+        setActiveTripsCount(at.data?.activeTrips || 0);
+        setAlerts(al.data?.alerts || null);
+        setGrowth(gr.data || null);
       })
-      .catch(() => {})
+      .catch((err) => { console.error('Dashboard load error:', err); })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="text-center py-5"><div className="spinner-border" /></div>;
 
-  const totalAlerts = alerts ? (alerts.idleSchools.count + alerts.expiredInsurance.count + alerts.schoolsWithoutAdmin.count) : 0;
+  const totalAlerts = alerts ? ((alerts.idleSchools?.count || 0) + (alerts.expiredInsurance?.count || 0) + (alerts.schoolsWithoutAdmin?.count || 0)) : 0;
 
   return (
     <div>
@@ -42,7 +42,7 @@ export default function DashboardPage() {
         <div className="col-md-3"><StatCard title="Alerts" value={totalAlerts} color={totalAlerts > 0 ? 'danger' : 'success'} icon={<FiAlertTriangle />} /></div>
       </div>
 
-      {growth && (
+      {growth && growth.growth && (
         <div className="card border-0 shadow-sm mb-4">
           <div className="card-body">
             <h6>Growth (Last {growth.period})</h6>
