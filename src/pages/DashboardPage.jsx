@@ -14,7 +14,7 @@ export default function DashboardPage() {
     Promise.all([getOverview(), getActiveTrips(), getAlerts(), getGrowthMetrics()])
       .then(([ov, at, al, gr]) => {
         setOverview(ov.data?.overview || null);
-        setActiveTripsCount(at.data?.activeTrips || 0);
+        setActiveTripsCount(at.data?.count || at.data?.activeTrips?.length || 0);
         setAlerts(al.data?.alerts || null);
         setGrowth(gr.data || null);
       })
