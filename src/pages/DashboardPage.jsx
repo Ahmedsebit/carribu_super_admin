@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getOverview, getActiveTrips, getAlerts, getGrowthMetrics } from '../services/superAdminService';
+import { getOverview, getAlerts, getGrowthMetrics } from '../services/superAdminService';
 import StatCard from '../components/StatCard';
 import { FiBook, FiUsers, FiTruck, FiMapPin, FiActivity, FiAlertTriangle } from 'react-icons/fi';
 
@@ -11,15 +11,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getOverview(), getActiveTrips(), getAlerts(), getGrowthMetrics()])
-      .then(([ov, at, al, gr]) => {
+    Promise.all([getOverview(), getAlerts(), getGrowthMetrics()])
+      .then(([ov, al, gr]) => {
         setOverview(ov.data?.overview || null);
-        const tripsData = at.data;
-        setActiveTripsCount(
-          typeof tripsData?.count === 'number' ? tripsData.count
-          : Array.isArray(tripsData?.activeTrips) ? tripsData.activeTrips.length
-          : 0
-        );
+        setActiveTripsCount(Number(ov.data?.overview?.activeTrips) || 0);
         setAlerts(al.data?.alerts || null);
         setGrowth(gr.data || null);
       })
