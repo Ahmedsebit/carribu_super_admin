@@ -1,5 +1,9 @@
 export default function StatCard({ title, value, subtitle, color = 'primary', icon }) {
-  const displayValue = (value !== null && typeof value === 'object') ? JSON.stringify(value) : (value ?? '-');
+  const displayValue = (value === null || value === undefined)
+    ? '-'
+    : (typeof value === 'object')
+      ? (Array.isArray(value) ? value.length : '-')
+      : value;
   return (
     <div className="card border-0 shadow-sm h-100">
       <div className="card-body">

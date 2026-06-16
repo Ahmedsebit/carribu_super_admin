@@ -13,6 +13,7 @@ export default function DashboardPage() {
   useEffect(() => {
     Promise.all([getOverview(), getAlerts(), getGrowthMetrics()])
       .then(([ov, al, gr]) => {
+        console.log('Dashboard API responses:', { overview: ov.data, alerts: al.data, growth: gr.data });
         setOverview(ov.data?.overview || null);
         setActiveTripsCount(Number(ov.data?.overview?.activeTrips) || 0);
         setAlerts(al.data?.alerts || null);
