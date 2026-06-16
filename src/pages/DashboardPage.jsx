@@ -14,7 +14,12 @@ export default function DashboardPage() {
     Promise.all([getOverview(), getActiveTrips(), getAlerts(), getGrowthMetrics()])
       .then(([ov, at, al, gr]) => {
         setOverview(ov.data?.overview || null);
-        setActiveTripsCount(at.data?.count || at.data?.activeTrips?.length || 0);
+        const tripsData = at.data;
+        setActiveTripsCount(
+          typeof tripsData?.count === 'number' ? tripsData.count
+          : Array.isArray(tripsData?.activeTrips) ? tripsData.activeTrips.length
+          : 0
+        );
         setAlerts(al.data?.alerts || null);
         setGrowth(gr.data || null);
       })
