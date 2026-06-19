@@ -16,6 +16,7 @@ export const activateSchool = (id) => api.post(`/super-admin/schools/${id}/activ
 export const getAdmins = (params) => api.get('/super-admin/admins', { params });
 export const createAdmin = (data) => api.post('/super-admin/admins', data);
 export const removeAdmin = (id) => api.delete(`/super-admin/admins/${id}`);
+export const resetAdminPassword = (id) => api.post(`/super-admin/admins/${id}/reset-password`);
 
 // Overview
 export const getOverview = () => api.get('/super-admin/overview');

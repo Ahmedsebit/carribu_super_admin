@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAdmins, createAdmin, removeAdmin, getSchools } from '../services/superAdminService';
+import { getAdmins, createAdmin, removeAdmin, resetAdminPassword, getSchools } from '../services/superAdminService';
 
 export default function AdminsPage() {
   const [admins, setAdmins] = useState([]);
@@ -9,6 +9,8 @@ export default function AdminsPage() {
   const [form, setForm] = useState({ schoolId: '', email: '', password: '', firstName: '', lastName: '', phone: '' });
   const [error, setError] = useState('');
   const [filterSchool, setFilterSchool] = useState('');
+
+  const [success, setSuccess] = useState('');
 
   const fetchAdmins = () => {
     setLoading(true);
@@ -35,12 +37,27 @@ export default function AdminsPage() {
     fetchAdmins();
   };
 
+  const handleResetPassword = async (admin) => {
+    if (!confirm(`Reset password for "${admin.firstName} ${admin.lastName}"? A new password will be generated and emailed to them.`)) return;
+    try {
+      const res = await resetAdminPassword(admin.id);
+      const msg = res.data.emailSent
+        ? `Password reset! New password emailed to ${admin.email}.`
+        : `Password reset! Temp password: ${res.data.tempPassword} (email delivery not confirmed)`;
+      setSuccess(msg);
+      setTimeout(() => setSuccess(''), 8000);
+    } catch (err) { setError(err.response?.data?.error || 'Failed to reset password.'); setTimeout(() => setError(''), 5000); }
+  };
+
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h4 className="mb-0">School Admins</h4>
         <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>+ Add Admin</button>
       </div>
+
+      {error && <div className="alert alert-danger py-2">{error}</div>}
+      {success && <div className="alert alert-success py-2">{success}</div>}
 
       {showCreate && (
         <div className="card border-0 shadow-sm mb-4">
@@ -88,7 +105,12 @@ export default function AdminsPage() {
                     <td>{a.school?.name}</td>
                     <td><span className={`badge bg-${a.isActive ? 'success' : 'secondary'}`}>{a.isActive ? 'Active' : 'Inactive'}</span></td>
                     <td>
-                      {a.isActive && <button className="btn btn-sm btn-outline-danger" onClick={() => handleRemove(a)}>Deactivate</button>}
+                      {a.isActive && (
+                        <>
+                          <button className="btn btn-sm btn-outline-warning me-1" onClick={() => handleResetPassword(a)}>Reset Password</button>
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleRemove(a)}>Deactivate</button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
