@@ -26,7 +26,7 @@ export default function LoginPage() {
     <div className="d-flex align-items-center justify-content-center vh-100 bg-dark">
       <div className="card shadow" style={{ width: 400 }}>
         <div className="card-body p-4">
-          <h4 className="text-center mb-1">🚌 Carribu</h4>
+          <h4 className="text-center mb-1">🚌 Carribu App</h4>
           <p className="text-center text-muted mb-4">Super Admin Portal</p>
           {error && <div className="alert alert-danger py-2">{error}</div>}
           <form onSubmit={handleSubmit}>
@@ -43,7 +43,7 @@ export default function LoginPage() {
             </button>
           </form>
           <p className="text-muted text-center small mt-3 mb-0">
-            <strong>Demo:</strong> superadmin@carribu.io / super123
+            <strong>Carribu App:</strong> superadmin@carribu.io / super123
           </p>
         </div>
       </div>
