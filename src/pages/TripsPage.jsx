@@ -37,6 +37,7 @@ export default function TripsPage() {
       case 'completed': return 'success';
       case 'in_progress': return 'primary';
       case 'cancelled': return 'danger';
+      case 'missed': return 'warning';
       default: return 'secondary';
     }
   };
