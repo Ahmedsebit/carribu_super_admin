@@ -18,6 +18,8 @@ export const permanentlyDeleteSchoolResource = (schoolId, type, resourceId, conf
   api.delete(`/super-admin/schools/${schoolId}/resources/${type}/${resourceId}`, {
     data: { confirmation },
   });
+export const endSchoolTrip = (schoolId, tripId) =>
+  api.put(`/super-admin/schools/${schoolId}/trips/${tripId}/end`);
 
 // Admins
 export const getAdmins = (params) => api.get('/super-admin/admins', { params });
