@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getSchools, createSchool, deactivateSchool, activateSchool, permanentlyDeleteSchool } from '../services/superAdminService';
 
+const normalizeConfirmation = value => value.trim().replace(/\s+/g, ' ');
+
 export default function SchoolsPage() {
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,14 +51,17 @@ export default function SchoolsPage() {
     const confirmation = prompt(
       `Permanently delete "${school.name}" and all school-owned data?\n\nType exactly: ${school.name}`
     );
-    if (confirmation !== school.name) {
+    if (
+      confirmation === null
+      || normalizeConfirmation(confirmation) !== normalizeConfirmation(school.name)
+    ) {
       if (confirmation !== null) {
         setError(`Confirmation did not match "${school.name}". Nothing was deleted.`);
       }
       return;
     }
     try {
-      await permanentlyDeleteSchool(school.id, confirmation);
+      await permanentlyDeleteSchool(school.id, school.name);
       fetchSchools();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete school.');

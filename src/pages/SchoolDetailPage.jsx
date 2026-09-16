@@ -76,6 +76,8 @@ const resourceConfig = {
   },
 };
 
+const normalizeConfirmation = value => value.trim().replace(/\s+/g, ' ');
+
 export default function SchoolDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -104,10 +106,16 @@ export default function SchoolDetailPage() {
     const confirmation = window.prompt(
       `This permanently deletes "${label}" and related data. This cannot be undone.\n\nType exactly: ${label}`
     );
-    if (confirmation !== null && confirmation !== label) {
+    if (
+      confirmation !== null
+      && normalizeConfirmation(confirmation) !== normalizeConfirmation(label)
+    ) {
       setError(`Confirmation did not match "${label}". Nothing was deleted.`);
     }
-    return confirmation === label ? confirmation : null;
+    return confirmation !== null
+      && normalizeConfirmation(confirmation) === normalizeConfirmation(label)
+      ? label
+      : null;
   };
 
   const deleteResource = async (config, item) => {
