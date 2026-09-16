@@ -7,10 +7,17 @@ export const getMe = () => api.get('/auth/me');
 export const getSchools = (params) => api.get('/super-admin/schools', { params });
 export const getSchool = (id) => api.get(`/super-admin/schools/${id}`);
 export const getSchoolStats = (id) => api.get(`/super-admin/schools/${id}/stats`);
+export const getSchoolResources = (id) => api.get(`/super-admin/schools/${id}/resources`);
 export const createSchool = (data) => api.post('/super-admin/schools', data);
 export const updateSchool = (id, data) => api.put(`/super-admin/schools/${id}`, data);
 export const deactivateSchool = (id) => api.post(`/super-admin/schools/${id}/deactivate`);
 export const activateSchool = (id) => api.post(`/super-admin/schools/${id}/activate`);
+export const permanentlyDeleteSchool = (id, confirmation) =>
+  api.delete(`/super-admin/schools/${id}`, { data: { confirmation } });
+export const permanentlyDeleteSchoolResource = (schoolId, type, resourceId, confirmation) =>
+  api.delete(`/super-admin/schools/${schoolId}/resources/${type}/${resourceId}`, {
+    data: { confirmation },
+  });
 
 // Admins
 export const getAdmins = (params) => api.get('/super-admin/admins', { params });

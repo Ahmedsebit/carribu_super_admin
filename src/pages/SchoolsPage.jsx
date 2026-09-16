@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getSchools, createSchool, deactivateSchool, activateSchool } from '../services/superAdminService';
+import { getSchools, createSchool, deactivateSchool, activateSchool, permanentlyDeleteSchool } from '../services/superAdminService';
 
 export default function SchoolsPage() {
   const [schools, setSchools] = useState([]);
@@ -13,7 +13,13 @@ export default function SchoolsPage() {
 
   const fetchSchools = () => {
     setLoading(true);
-    getSchools({ search: search || undefined }).then(res => setSchools(res.data.schools)).catch(() => {}).finally(() => setLoading(false));
+    getSchools({ search: search || undefined })
+      .then(res => {
+        setSchools(res.data.schools);
+        setError('');
+      })
+      .catch(err => setError(err.response?.data?.error || 'Failed to load schools.'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => { fetchSchools(); }, [search]);
@@ -37,6 +43,24 @@ export default function SchoolsPage() {
       await activateSchool(school.id);
     }
     fetchSchools();
+  };
+
+  const handleDelete = async (school) => {
+    const confirmation = prompt(
+      `Permanently delete "${school.name}" and all school-owned data?\n\nType exactly: ${school.name}`
+    );
+    if (confirmation !== school.name) {
+      if (confirmation !== null) {
+        setError(`Confirmation did not match "${school.name}". Nothing was deleted.`);
+      }
+      return;
+    }
+    try {
+      await permanentlyDeleteSchool(school.id, confirmation);
+      fetchSchools();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete school.');
+    }
   };
 
   return (
@@ -86,9 +110,12 @@ export default function SchoolsPage() {
                     <td>{s.routeCount}</td>
                     <td><span className={`badge bg-${s.isActive ? 'success' : 'secondary'}`}>{s.isActive ? 'Active' : 'Inactive'}</span></td>
                     <td>
-                      <button className={`btn btn-sm btn-outline-${s.isActive ? 'danger' : 'success'}`} onClick={() => handleToggle(s)}>
-                        {s.isActive ? 'Deactivate' : 'Activate'}
-                      </button>
+                      <div className="d-flex gap-2">
+                        <button className={`btn btn-sm btn-outline-${s.isActive ? 'danger' : 'success'}`} onClick={() => handleToggle(s)}>
+                          {s.isActive ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(s)}>Delete</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
