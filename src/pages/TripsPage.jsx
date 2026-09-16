@@ -40,10 +40,31 @@ export default function TripsPage() {
 
     Promise.all([getActiveTrips(), getTripHistory(params)])
       .then(([at, th]) => {
-        setActiveCount(at.data.activeTrips);
-        setPerSchool(at.data.perSchool || []);
+        const activeTrips = at.data.activeTrips || [];
+        const visibleActiveTrips = activeTrips.filter(trip => {
+          const tripSchoolId = trip.route?.school?.id;
+          if (filters.schoolId && String(tripSchoolId) !== String(filters.schoolId)) return false;
+          if (filters.startDate && trip.scheduledDate < filters.startDate) return false;
+          if (filters.endDate && trip.scheduledDate > filters.endDate) return false;
+          return true;
+        });
+        const mergedTrips = [...visibleActiveTrips, ...(th.data.trips || [])]
+          .filter((trip, index, allTrips) =>
+            allTrips.findIndex(candidate => candidate.id === trip.id) === index
+          );
+        const activeBySchool = activeTrips.reduce((counts, trip) => {
+          const schoolName = trip.route?.school?.name || 'Unknown';
+          counts[schoolName] = (counts[schoolName] || 0) + 1;
+          return counts;
+        }, {});
+
+        setActiveCount(at.data.count ?? activeTrips.length);
+        setPerSchool(Object.entries(activeBySchool).map(([schoolName, count]) => ({
+          schoolName,
+          count,
+        })));
         setStatusBreakdown(th.data.statusBreakdown || []);
-        setTrips(th.data.trips || []);
+        setTrips(mergedTrips);
         setTotal(th.data.total);
         setError('');
       })
@@ -144,7 +165,7 @@ export default function TripsPage() {
                 <tbody>
                   {perSchool.map((s, i) => (
                     <tr key={i}>
-                      <td>{s['route.school.name'] || 'Unknown'}</td>
+                      <td>{s.schoolName}</td>
                       <td><span className="badge bg-success">{s.count}</span></td>
                     </tr>
                   ))}
