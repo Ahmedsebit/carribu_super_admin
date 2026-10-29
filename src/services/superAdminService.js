@@ -8,6 +8,8 @@ export const getSchools = (params) => api.get('/super-admin/schools', { params }
 export const getSchool = (id) => api.get(`/super-admin/schools/${id}`);
 export const getSchoolStats = (id) => api.get(`/super-admin/schools/${id}/stats`);
 export const getSchoolResources = (id) => api.get(`/super-admin/schools/${id}/resources`);
+export const updateVehicleTracker = (schoolId, vehicleId, trackerUniqueId) =>
+  api.put(`/super-admin/schools/${schoolId}/vehicles/${vehicleId}/tracker`, { trackerUniqueId });
 export const createSchool = (data) => api.post('/super-admin/schools', data);
 export const updateSchool = (id, data) => api.put(`/super-admin/schools/${id}`, data);
 export const deactivateSchool = (id) => api.post(`/super-admin/schools/${id}/deactivate`);

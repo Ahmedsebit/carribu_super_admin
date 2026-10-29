@@ -6,6 +6,7 @@ import {
   getSchoolResources,
   permanentlyDeleteSchool,
   permanentlyDeleteSchoolResource,
+  updateVehicleTracker,
 } from '../services/superAdminService';
 import StatCard from '../components/StatCard';
 
@@ -47,12 +48,13 @@ const resourceConfig = {
   vehicles: {
     type: 'vehicle',
     title: 'Vehicles',
-    columns: ['Plate number', 'Vehicle', 'Status'],
+    columns: ['Plate number', 'Vehicle', 'Status', 'Tracker identifier'],
     label: item => item.plateNumber,
     cells: item => [
       item.plateNumber,
       `${item.make || ''} ${item.model || ''}`.trim() || '-',
       item.status,
+      item.trackerUniqueId || 'Not linked',
     ],
   },
   routes: {
@@ -87,6 +89,11 @@ export default function SchoolDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState('');
   const [error, setError] = useState('');
+  const [trackerVehicle, setTrackerVehicle] = useState(null);
+  const [trackerIdentifier, setTrackerIdentifier] = useState('');
+  const [trackerError, setTrackerError] = useState('');
+  const [trackerSaving, setTrackerSaving] = useState(false);
+  const [trackerSuccess, setTrackerSuccess] = useState('');
 
   const load = () => {
     Promise.all([getSchool(id), getSchoolStats(id), getSchoolResources(id)])
@@ -148,6 +155,49 @@ export default function SchoolDetailPage() {
     }
   };
 
+  const editTracker = vehicle => {
+    setTrackerVehicle(vehicle);
+    setTrackerIdentifier(vehicle.trackerUniqueId || '');
+    setTrackerError('');
+    setTrackerSuccess('');
+  };
+
+  const saveTracker = async trackerUniqueId => {
+    if (trackerSaving) return;
+    setTrackerError('');
+    setTrackerSaving(true);
+    try {
+      const { data } = await updateVehicleTracker(id, trackerVehicle.id, trackerUniqueId);
+      setResources(previous => ({
+        ...previous,
+        vehicles: previous.vehicles.map(vehicle =>
+          vehicle.id === data.vehicle.id ? { ...vehicle, ...data.vehicle } : vehicle),
+      }));
+      setTrackerVehicle(null);
+      setTrackerSuccess(trackerUniqueId ? 'GPS tracker linked.' : 'GPS tracker unlinked.');
+    } catch (err) {
+      setTrackerError(err.response?.data?.error || 'The tracker assignment could not be saved. Please try again.');
+    } finally {
+      setTrackerSaving(false);
+    }
+  };
+
+  const submitTracker = event => {
+    event.preventDefault();
+    const identifier = trackerIdentifier.trim();
+    if (!identifier || identifier.length > 128) {
+      setTrackerError('Enter a Traccar identifier between 1 and 128 characters. Use Unlink tracker to remove a link.');
+      return;
+    }
+    saveTracker(identifier);
+  };
+
+  const unlinkTracker = () => {
+    if (window.confirm(`Unlink the GPS tracker from ${trackerVehicle.plateNumber}? New tracker locations will no longer be saved for this vehicle.`)) {
+      saveTracker(null);
+    }
+  };
+
   if (loading) return <div className="text-center py-5"><div className="spinner-border" /></div>;
   if (!school) return <div className="alert alert-danger">School not found.</div>;
 
@@ -161,6 +211,7 @@ export default function SchoolDetailPage() {
       {school.manager && <p className="text-muted mb-1"><strong>Manager:</strong> {school.manager.firstName} {school.manager.lastName} ({school.manager.email})</p>}
       <span className={`badge bg-${school.isActive ? 'success' : 'secondary'} mb-3`}>{school.isActive ? 'Active' : 'Inactive'}</span>
       {error && <div className="alert alert-danger">{error}</div>}
+      {trackerSuccess && <div className="alert alert-success" role="status">{trackerSuccess}</div>}
 
       <div className="row g-3 mb-4">
         <div className="col-md-2"><StatCard title="Total Users" value={summary.userCount} /></div>
@@ -205,9 +256,9 @@ export default function SchoolDetailPage() {
       </div>
 
       <div className="mt-4">
-        <h5>Permanent Data Management</h5>
+        <h5>School Resource Management</h5>
         <p className="text-muted small">
-          Deletion removes the selected record and dependent data. Resources connected to an in-progress trip cannot be deleted until the trip ends.
+          Super admins manage tracker assignments in Vehicles below. Deletion removes the selected record and dependent data. Resources connected to an in-progress trip cannot be deleted until the trip ends.
         </p>
         {resources && Object.entries(resourceConfig).map(([key, config]) => {
           const items = resources[key] || [];
@@ -218,6 +269,40 @@ export default function SchoolDetailPage() {
                   <h6 className="mb-0">{config.title}</h6>
                   <span className="badge bg-secondary">{items.length}</span>
                 </div>
+                {key === 'vehicles' && trackerVehicle && (
+                  <form onSubmit={submitTracker} className="border rounded p-3 mb-3">
+                    <h6>{trackerVehicle.trackerUniqueId ? 'Change' : 'Link'} GPS tracker - {trackerVehicle.plateNumber}</h6>
+                    {trackerError && <div className="alert alert-danger" role="alert">{trackerError}</div>}
+                    {trackerVehicle.status !== 'active' && (
+                      <div className="alert alert-warning">This vehicle is not active. Linking does not activate it; positions will be ignored until it is active.</div>
+                    )}
+                    <label className="form-label" htmlFor="tracker-identifier">Tracker IMEI / device identifier</label>
+                    <input
+                      id="tracker-identifier"
+                      className="form-control"
+                      value={trackerIdentifier}
+                      onChange={event => setTrackerIdentifier(event.target.value)}
+                      maxLength={128}
+                      disabled={trackerSaving}
+                      autoFocus
+                      aria-describedby="tracker-help"
+                    />
+                    <p id="tracker-help" className="text-muted small mt-2">
+                      Copy the Identifier from this device in Traccar. Each tracker can be assigned to only one vehicle.
+                      The next backend poll picks up the link without restarting. Saving locations requires an active vehicle,
+                      an in-progress trip, and a GPS fix from after the trip started.
+                    </p>
+                    <div className="d-flex gap-2 flex-wrap">
+                      <button type="submit" className="btn btn-primary" disabled={trackerSaving}>
+                        {trackerSaving ? 'Saving...' : trackerVehicle.trackerUniqueId ? 'Save tracker' : 'Link tracker'}
+                      </button>
+                      {trackerVehicle.trackerUniqueId && (
+                        <button type="button" className="btn btn-outline-danger" onClick={unlinkTracker} disabled={trackerSaving}>Unlink tracker</button>
+                      )}
+                      <button type="button" className="btn btn-outline-secondary" onClick={() => setTrackerVehicle(null)} disabled={trackerSaving}>Cancel</button>
+                    </div>
+                  </form>
+                )}
                 <div className="table-responsive">
                   <table className="table table-sm align-middle mb-0">
                     <thead>
@@ -231,9 +316,18 @@ export default function SchoolDetailPage() {
                         <tr key={item.id}>
                           {config.cells(item).map((cell, index) => <td key={config.columns[index]}>{cell}</td>)}
                           <td className="text-end">
+                            {key === 'vehicles' && (
+                              <button
+                                className="btn btn-sm btn-outline-primary me-2"
+                                disabled={trackerSaving || Boolean(deleting)}
+                                onClick={() => editTracker(item)}
+                              >
+                                {item.trackerUniqueId ? 'Change tracker' : 'Link tracker'}
+                              </button>
+                            )}
                             <button
                               className="btn btn-sm btn-outline-danger"
-                              disabled={deleting === `${config.type}-${item.id}`}
+                              disabled={trackerSaving || deleting === `${config.type}-${item.id}`}
                               onClick={() => deleteResource(config, item)}
                             >
                               {deleting === `${config.type}-${item.id}` ? 'Deleting...' : 'Delete permanently'}
@@ -262,7 +356,7 @@ export default function SchoolDetailPage() {
           </p>
           <button
             className="btn btn-danger"
-            disabled={deleting === 'school'}
+            disabled={trackerSaving || deleting === 'school'}
             onClick={deleteCurrentSchool}
           >
             {deleting === 'school' ? 'Deleting school...' : 'Delete school permanently'}
