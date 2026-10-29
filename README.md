@@ -3,9 +3,11 @@
 ## Vehicle GPS trackers (super admin only)
 
 Open **Schools**, select the school, and find **Vehicles** under
-**School Resource Management**. Choose **Link tracker** and enter the exact
-Traccar **Identifier** (normally the IMEI). **Change tracker** replaces the
-assignment; **Unlink tracker** removes it after confirmation.
+**School Resource Management**. Click the vehicle's plate number or choose
+**Add Traccar device**, then enter the exact Traccar **Identifier** (normally
+the IMEI). **Edit Traccar device** opens an existing assignment;
+**Unlink tracker** removes it after confirmation. This editor changes only
+the tracker assignment, not the vehicle's other details.
 
 The backend permits only `super_admin` accounts to manage tracker assignments
 through `PUT /api/super-admin/schools/{schoolId}/vehicles/{vehicleId}/tracker`.
