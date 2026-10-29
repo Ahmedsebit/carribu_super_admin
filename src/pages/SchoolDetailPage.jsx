@@ -269,9 +269,12 @@ export default function SchoolDetailPage() {
                   <h6 className="mb-0">{config.title}</h6>
                   <span className="badge bg-secondary">{items.length}</span>
                 </div>
+                {key === 'vehicles' && items.length > 0 && (
+                  <p className="text-muted small">Click a vehicle plate to add, change, or unlink its Traccar device.</p>
+                )}
                 {key === 'vehicles' && trackerVehicle && (
-                  <form onSubmit={submitTracker} className="border rounded p-3 mb-3">
-                    <h6>{trackerVehicle.trackerUniqueId ? 'Change' : 'Link'} GPS tracker - {trackerVehicle.plateNumber}</h6>
+                  <form key={trackerVehicle.id} onSubmit={submitTracker} className="border rounded p-3 mb-3">
+                    <h6>{trackerVehicle.trackerUniqueId ? 'Edit' : 'Add'} Traccar device - {trackerVehicle.plateNumber}</h6>
                     {trackerError && <div className="alert alert-danger" role="alert">{trackerError}</div>}
                     {trackerVehicle.status !== 'active' && (
                       <div className="alert alert-warning">This vehicle is not active. Linking does not activate it; positions will be ignored until it is active.</div>
@@ -314,7 +317,21 @@ export default function SchoolDetailPage() {
                     <tbody>
                       {items.map(item => (
                         <tr key={item.id}>
-                          {config.cells(item).map((cell, index) => <td key={config.columns[index]}>{cell}</td>)}
+                          {config.cells(item).map((cell, index) => (
+                            <td key={config.columns[index]}>
+                              {key === 'vehicles' && index === 0 ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-link p-0 text-start"
+                                  aria-label={`Edit Traccar device for ${item.plateNumber}`}
+                                  disabled={trackerSaving || Boolean(deleting)}
+                                  onClick={() => editTracker(item)}
+                                >
+                                  {cell}
+                                </button>
+                              ) : cell}
+                            </td>
+                          ))}
                           <td className="text-end">
                             {key === 'vehicles' && (
                               <button
@@ -322,7 +339,7 @@ export default function SchoolDetailPage() {
                                 disabled={trackerSaving || Boolean(deleting)}
                                 onClick={() => editTracker(item)}
                               >
-                                {item.trackerUniqueId ? 'Change tracker' : 'Link tracker'}
+                                {item.trackerUniqueId ? 'Edit Traccar device' : 'Add Traccar device'}
                               </button>
                             )}
                             <button
